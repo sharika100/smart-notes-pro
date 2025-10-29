@@ -1,0 +1,31 @@
+{
+  "name": "smart-notes-pro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart Notes App with add, edit, delete, search, pinning, and AI-based smart features.",
+  "main": "index.jsx",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "notes",
+    "react",
+    "smart",
+    "todo",
+    "vibecoding",
+    "ai"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.2",
+    "vite": "^5.3.1"
+  }
+}
