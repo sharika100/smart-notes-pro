@@ -1,115 +1,75 @@
-import React, { useEffect, useState } from "react";
-import NoteEditor from "./components/NoteEditor";
-import NoteCard from "./components/NoteCard";
-import SearchBar from "./components/SearchBar";
-import ThemeToggle from "./components/ThemeToggle";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import NoteCard from './components/NoteCard';
+import NoteEditor from './components/NoteEditor';
+import SearchBar from './components/SearchBar';
+import ThemeToggle from './components/ThemeToggle';
+import { saveNotes, loadNotes } from './utils/storage';
+import { generateSmartTags } from './utils/smartFeatures';
 
-const App = () => {
+function App() {
   const [notes, setNotes] = useState([]);
-  const [editingNote, setEditingNote] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState("newest");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
 
-  // Load notes from localStorage
   useEffect(() => {
-    const savedNotes = JSON.parse(localStorage.getItem("notes")) || [];
-    setNotes(savedNotes);
+    setNotes(loadNotes());
   }, []);
 
-  // Save notes to localStorage whenever notes change
   useEffect(() => {
-    localStorage.setItem("notes", JSON.stringify(notes));
+    saveNotes(notes);
   }, [notes]);
 
-  // Add or update note
-  const handleSave = (note) => {
-    if (editingNote) {
-      setNotes(notes.map((n) => (n.id === note.id ? note : n)));
-      setEditingNote(null);
-    } else {
-      setNotes([note, ...notes]);
-    }
+  const addNote = (title, content) => {
+    const { summary, tags, mood } = generateSmartTags(content);
+    const newNote = {
+      id: Date.now(),
+      title,
+      content,
+      summary,
+      tags,
+      mood,
+      pinned: false,
+      date: new Date().toLocaleString()
+    };
+    setNotes([newNote, ...notes]);
   };
 
-  // Delete note
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this note?")) {
-      setNotes(notes.filter((note) => note.id !== id));
-    }
+  const deleteNote = (id) => {
+    setNotes(notes.filter((n) => n.id !== id));
   };
 
-  // Edit note
-  const handleEdit = (note) => {
-    setEditingNote(note);
-  };
-
-  // Pin/unpin note
-  const handlePin = (id) => {
+  const togglePin = (id) => {
     setNotes(
-      notes.map((note) =>
-        note.id === id ? { ...note, pinned: !note.pinned } : note
-      )
+      notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n))
     );
   };
 
-  // Filter + search notes
-  const filteredNotes = notes.filter((note) =>
-    note.text.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Sort notes (pinned notes always on top)
-  const sortedNotes = [...filteredNotes].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return sortOrder === "newest"
-      ? new Date(b.date) - new Date(a.date)
-      : new Date(a.date) - new Date(b.date);
-  });
+  const filteredNotes = notes
+    .filter((n) =>
+      n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      n.content.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (b.pinned === a.pinned ? 0 : b.pinned ? 1 : -1));
 
   return (
-    <div className="app">
-      <header>
-        <h1>🧠 Smart Notes Pro</h1>
-        <ThemeToggle />
-      </header>
-
-      <div className="toolbar">
-        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-        <select
-          className="sort-select"
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-        >
-          <option value="newest">Sort by Newest</option>
-          <option value="oldest">Sort by Oldest</option>
-        </select>
-      </div>
-
-      <NoteEditor
-        onSave={handleSave}
-        editingNote={editingNote}
-        onCancel={() => setEditingNote(null)}
-      />
-
-      <div className="notes-grid">
-        {sortedNotes.length > 0 ? (
-          sortedNotes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onPin={handlePin}
-              searchQuery={searchQuery}
-            />
-          ))
-        ) : (
-          <p className="no-notes">No notes found.</p>
-        )}
+    <div className={`app ${darkMode ? 'dark' : ''}`}>
+      <h1>🧠 Smart Notes Pro</h1>
+      <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+      <SearchBar setSearchTerm={setSearchTerm} />
+      <NoteEditor addNote={addNote} />
+      <div className="note-list">
+        {filteredNotes.map((note) => (
+          <NoteCard
+            key={note.id}
+            note={note}
+            deleteNote={deleteNote}
+            togglePin={togglePin}
+          />
+        ))}
       </div>
     </div>
   );
-};
+}
 
 export default App;
